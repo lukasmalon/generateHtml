@@ -89,21 +89,21 @@ class HtmlElement(ContextElement):
                 self._validate_attributes()
                 self._remove_from_context(attr)
             elif isinstance(attr, object) and issubclass(type(attr), HtmlElement):
-                if index:
-                    self.child_nodes.insert(index, attr)
+                if index is not None:
+                    self.child_nodes[index] = attr
                     index += 1
                 else:
                     self.child_nodes.append(attr)
             elif isinstance(attr, (Text, str, int, float)):
                 text_node = Text(str(attr)) if not isinstance(attr, Text) else attr
-                if index:
-                    self.child_nodes.insert(index, attr)
+                if index is not None:
+                    self.child_nodes[index] = attr
                     index += 1
                 else:
                     self.child_nodes.append(text_node)
             elif isinstance(attr, (list, tuple)):
                 # recursive parsing of elements in iterables
-                self._parse_inner_content(attr, index)
+                self._parse_inner_content(attr, index=index)
             else:
                 raise TypeError(
                     f"Argument {attr} is not subclass of {HtmlAttribute}, "
@@ -112,7 +112,7 @@ class HtmlElement(ContextElement):
 
         # Removing nodes which have parent from context
         if issubclass(type(self), ContextElement):
-            for child in self.child_nodes:                
+            for child in self.child_nodes:
                 self._remove_from_context(child)
 
     def _validate_attributes(self):
@@ -125,6 +125,7 @@ class HtmlElement(ContextElement):
             ),
             1,
         )
+        print('dupli: ', duplicate_attr, self.attributes)
         if duplicate_attr:
             raise DuplicateAttributeError(
                 f"Attribute {duplicate_attr[0]} occured in tag more than once: {duplicate_attr[1]} times."
@@ -212,7 +213,7 @@ class HtmlElement(ContextElement):
             if len(self) < key:
                 raise IndexError("Out of range while inserting into child list.")
             if issubclass(type(value), HtmlAttribute):
-                raise TypeError('Cannot add attribute into child elements.')
+                raise TypeError("Cannot add attribute into tag's child elements.")
             elif issubclass(type(value), (Text, int, float, str)):
                 value = Text(str(value)) if not isinstance(value, Text) else value
             else:
@@ -284,7 +285,7 @@ class HtmlElement(ContextElement):
 
     def add(self, *new_child: HtmlElement | HtmlAttribute | Text | int | str | float, index: int|None = None):
         """Main method for adding new attributes, child html elements or text nodes into existing objects"""
-        self._parse_inner_content(new_child, index)
+        self._parse_inner_content(new_child, index=index)
 
         return self
 
@@ -419,7 +420,7 @@ class Document(Container):
 
     def add(self, *new_child: HtmlElement | Text | int | str | float, index: int | None = None):
         """Main method for adding new attributes, child html elements or text nodes into existing objects"""
-        self.body._parse_inner_content(new_child, index)
+        self.body._parse_inner_content(new_child, index=index)
 
         if self.attributes:
             raise IllegalCompositionError(
