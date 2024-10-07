@@ -100,7 +100,7 @@ print(Comment("Happy commenting!", P("Can contain another tags too")))
 
 `Comment` class supports IE specific conditional comments:
 ```python
-print(Comment("Conditional comment", condition="IE 8"))
+print(Comment("This is conditional comment", condition="IE 8"))
 ```
 ```html
 <!--[if IE 8]>
@@ -177,8 +177,34 @@ print(Form(action="/action_page.php", accept_charset="utf-8"))
 </form>
 ```
 
+### Styles
+For creating inline styles of HTML tag elements you can use `Style_` attribute class.
+You can initialize style with raw CSS string in constructor of `Style_` class or you can use keyword named arguments.
+```python
+sty = Style_(border="2px solid powderblue", margin="50 px", font_size="12 px")
+
+print(P("Styled paragraph", sty))
+```
+```html
+<p style="border: 2px solid powderblue;margin: 50 px;font-size: 12 px;">
+  Styled paragraph
+</p>
+```
+
+## data-* attribute
+With attribute class `Data_` you can create `data-*` attribute that allow us to store extra information on standard, semantic HTML elements without other hacks such as non-standard attributes, or extra properties on DOM.
+```python
+data = Data_("hidden-id", "1")
+print(Div(data, data_col=5))
+```
+```html
+<div data-col="5" data-hidden-id="1">
+</div>
+```
+
+
 ## Manipulating objects
-Two tags can be concatenated using `+` operator. Both objects gets returns in parent `Container` tag.
+Two tags can be concatenated using `+` operator. Results in parent `Container` tag containing both concatenating tags.
 ```python
 p1 = P("First paragraph")
 p2 = P("Second paragraph")
@@ -214,7 +240,7 @@ print(div)
 </div>
 ```
 
-Tags can be multiplicated with positive `int` number. Results in parent `Container` object:
+Tags can be multiplicated with positive `int` number using `*` multiplication sign. Results in parent `Container` object:
 ```python
 p = P("Paragraph")
 
@@ -267,16 +293,14 @@ print(div)
 </div>
 ```
 
-<!---
-TODO
-##Context manager
+## Context manager
 Tags and attributes can be created using context manager. Just use `with` keyword. You can even nest `with` statements.
 ```python
-div = None
-with Div(H1()) as div, P() as p:
+div: HtmlElement = None
+with Div(H1("Header")) as div, P() as p:
     with Span() as sp, Strong():
         Text("foo")
-        "bar"
+        Text("bar")
 
         sp.add("baz")
         sp[0] = "qux"
@@ -285,7 +309,26 @@ print(div)
 
 ```
 ```html
+<div>
+  <h1>
+    Header
+  </h1>
+  <p>
+    <span>
+      qux
+      <strong>
+        foo
+        bar
+      </strong>
+    </span>
+    <hr>
+  </p>
+</div>
 ```
+
+<!---
+TODO
+- Aria-
 -->
 
 
