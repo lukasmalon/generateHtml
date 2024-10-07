@@ -2,20 +2,20 @@ from __future__ import annotations
 from enum import Enum
 from copy import deepcopy
 
-from context import ContextStack as ContextElement
-from attributes import (
+from generateHtml.context import ContextStack as ContextElement
+from generateHtml.attributes import (
     HtmlAttribute,
     DashedHtmlAttribute,
-    UNDERSCORED_ATTRIBUTES,
-    DASHED_ATTRIBUTES,
+    _UNDERSCORED_ATTRIBUTES,
+    _DASHED_ATTRIBUTES,
 )
-from exceptions import (
+from generateHtml.exceptions import (
     DuplicateAttributeError,
     WrongAttributeElementCombinationError,
     IllegalCompositionError,
 )
 
-from utils import check_max_occurences, get_class_from_string, escape_html
+from generateHtml.utils import check_max_occurences, get_class_from_string, escape_html
 
 
 class HtmlElement(ContextElement):
@@ -873,10 +873,10 @@ class Table(HtmlElement):
         header = options.get(TableOption.HEADER.value, None)
 
         tagged_content = list()
-        for row_idx, row in Enumerate(content):
+        for row_idx, row in enumerate(content):
             if isinstance(row, (list, tuple)):
                 item_row = list()
-                for col_idx, item in Enumerate(row):
+                for col_idx, item in enumerate(row):
                     if isinstance(item, (Text, str, int, float)):
                         if header is not None and (
                             (

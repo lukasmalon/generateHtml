@@ -1,12 +1,12 @@
 from __future__ import annotations
 from enum import Enum
 
-from context import ContextStack as ContextElement
-from utils import prepend_dash_before_uppercase, escape_html
+from generateHtml.context import ContextStack as ContextElement
+from generateHtml.utils import prepend_dash_before_uppercase, escape_html
 
 ## Using underscore after attribute name for attribute's class
-UNDERSCORED_ATTRIBUTES = ('data', 'form', 'label', 'cite', 'dir', 'style', 'title', 'span', 'aria')
-DASHED_ATTRIBUTES = ('data', 'aria')
+_UNDERSCORED_ATTRIBUTES = ('data', 'form', 'label', 'cite', 'dir', 'style', 'title', 'span', 'aria')
+_DASHED_ATTRIBUTES = ('data', 'aria')
 
 class HtmlAttribute(ContextElement):
 
