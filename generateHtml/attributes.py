@@ -38,7 +38,7 @@ class HtmlAttribute(ContextElement):
         self._value = escape_html(self.check_attribute_value(value))
 
     def _display_prepare(self) -> str:
-        class_name = getattr(self.__class__, 'display_name', self.__class__.__name__.lower())
+        class_name = getattr(self.__class__, 'display_name', self.__class__.name_to_string())
         return f'{class_name}="{self._value}"'
 
     def display(self) -> str:
@@ -48,6 +48,7 @@ class HtmlAttribute(ContextElement):
         return self.display()
 
     def add(self, *values):
+        """Method for appending attribute value."""
         for val in values:
             if isinstance(val, (int, float, str)):
                 self.value += escape_html(str(val))
