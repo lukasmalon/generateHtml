@@ -10,13 +10,12 @@ _DASHED_ATTRIBUTES = ('data', 'aria')
 
 class HtmlAttribute(ContextElement):
 
-    @classmethod
-    def name_to_string(cls:HtmlAttribute) -> str:
+    def name_to_string(self: HtmlAttribute) -> str:
         """Converts class name into original attribute format.
 
         Parameters
         ----------
-        cls : HtmlAttribute
+        self : HtmlAttribute
            HtmlAttribute class for converting. 
 
         Returns
@@ -24,7 +23,7 @@ class HtmlAttribute(ContextElement):
         str
             Original attribute format in string.
         """
-        return prepend_dash_before_uppercase(cls.__name__).lower().replace('_', '-').strip('-')
+        return prepend_dash_before_uppercase(self.__class__.__name__).lower().replace('_', '-').strip('-')
 
     @staticmethod
     def check_attribute_value(value) -> str:
@@ -38,7 +37,7 @@ class HtmlAttribute(ContextElement):
         self._value = escape_html(self.check_attribute_value(value))
 
     def _display_prepare(self) -> str:
-        class_name = getattr(self.__class__, 'display_name', self.__class__.name_to_string())
+        class_name = getattr(self.__class__, 'display_name', self.name_to_string())
         return f'{class_name}="{self._value}"'
 
     def display(self) -> str:
@@ -117,6 +116,22 @@ class DashedHtmlAttribute(HtmlAttribute):
 
     def _display_prepare(self) -> str:
         return f'{self.name}="{self._value}"'
+
+    def name_to_string(self: HtmlAttribute) -> str:
+        """Converts class name into original attribute format.
+
+        Parameters
+        ----------
+        self : HtmlAttribute
+           HtmlAttribute class for converting. 
+
+        Returns
+        -------
+        str
+            Original attribute format in string.
+        """
+        class_name = prepend_dash_before_uppercase(self.__class__.__name__).lower().replace('_', '-').strip('-')
+        return f"{class_name}-{self._after_dash_part}"
 
     @property
     def name(self) -> str:

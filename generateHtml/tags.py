@@ -37,13 +37,22 @@ class HtmlElement(ContextElement):
             attribute_key: str = key.lower().strip("_").replace("_", "-")
             if isinstance(val, HtmlAttribute):
                 self.attributes[attribute_key] = val
-            elif isinstance(val, str):
+            elif isinstance(val, (str, int, float)):
+                if not isinstance(val, str):
+                    val = str(val)
+
                 # Convert kwargs attribute name into class name
                 splitted: list[str] = attribute_key.split("-", 1)
-                dashed_part: str | None = (
+                after_dash_part: str | None = (
                     splitted[1]
                     if len(splitted) > 1 and splitted[0] in _DASHED_ATTRIBUTES
                     else ""
+                )
+
+                predashed_part: str | None = (
+                    ''.join((a.capitalize() for a in splitted))
+                    if splitted[0] not in _DASHED_ATTRIBUTES
+                    else splitted[0].capitalize()
                 )
 
                 underscoring_collision = (
@@ -52,14 +61,13 @@ class HtmlElement(ContextElement):
                     else ""
                 )
 
-                attribute_class: str = ''.join((a.capitalize() for a in attribute_key.split('-')))
                 attribute_class = (
-                    f"{attribute_class}{underscoring_collision}"
+                    f"{predashed_part}{underscoring_collision}"
                 )
                 # Use key to find HtmlAttribute class and then initialize it with val as argument
                 attribute_class_ = get_class_from_string("generateHtml.attributes", attribute_class)
                 self.attributes[attribute_key] = (
-                    attribute_class_(dashed_part, val)
+                    attribute_class_(after_dash_part, val)
                     if issubclass(attribute_class_, DashedHtmlAttribute)
                     else attribute_class_(val)
                 )
