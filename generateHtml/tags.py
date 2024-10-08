@@ -15,7 +15,7 @@ from generateHtml.exceptions import (
     IllegalCompositionError,
 )
 
-from generateHtml.utils import check_max_occurences, get_class_from_string, escape_html
+from generateHtml.utils import get_class_from_string, escape_html
 
 
 class HtmlElement(ContextElement):
@@ -85,6 +85,10 @@ class HtmlElement(ContextElement):
             if self is attr:  # Preventing circular dependency
                 attr = deepcopy(attr)
             if isinstance(attr, object) and issubclass(type(attr), HtmlAttribute):
+                if self.attributes.get(attr.name_to_string()):
+                    raise DuplicateAttributeError(
+                    f"Attribute {attr.name_to_string()} is already defined in tag {self}"
+                )
                 self.attributes[attr.name_to_string()] = attr
                 self._validate_attributes()
                 self._remove_from_context(attr)
@@ -103,7 +107,11 @@ class HtmlElement(ContextElement):
                     self.child_nodes.append(text_node)
             elif isinstance(attr, (list, tuple)):
                 # recursive parsing of elements in iterables
-                self._parse_inner_content(attr, index=index)
+                if index is not None:
+                    self.child_nodes[index] = Container(*attr)
+                    index += 1
+                else:
+                    self.child_nodes.append(Container(*attr))
             else:
                 raise TypeError(
                     f"Argument {attr} is not subclass of {HtmlAttribute}, "
@@ -116,21 +124,6 @@ class HtmlElement(ContextElement):
                 self._remove_from_context(child)
 
     def _validate_attributes(self):
-        # Check for attribute duplicates
-        duplicate_attr = check_max_occurences(
-            (
-                attribute
-                for attribute in self.attributes.values()
-                if not issubclass(type(attribute), DashedHtmlAttribute)
-            ),
-            1,
-        )
-        print('dupli: ', duplicate_attr, self.attributes)
-        if duplicate_attr:
-            raise DuplicateAttributeError(
-                f"Attribute {duplicate_attr[0]} occured in tag more than once: {duplicate_attr[1]} times."
-            )
-
         # TODO: Check for attribute combination in tag
 
         # Check assignment attributes to parent html tags
@@ -207,8 +200,11 @@ class HtmlElement(ContextElement):
 
     def __setitem__(self, key, value):
         if isinstance(key, str):
-            self._parse_attributes({key: value})
-            self._validate_attributes()
+            if isinstance(value, (str, float, int)):
+                self._parse_attributes({key: value})
+                self._validate_attributes()
+            else:
+                raise TypeError("You can only add new value of tag's attribute as 'str', 'float' or 'int' through dictionary notation.")
         elif isinstance(key, int):
             if len(self) < key:
                 raise IndexError("Out of range while inserting into child list.")
@@ -379,7 +375,7 @@ class Container(HtmlElement):
 
         return (
             f"{''.join([depth_level*indent])}"
-            f"{''.join((child._display_prepare(pretty, new_line, indent, depth_level) for child in self.child_nodes))}"
+            f"{new_line.join((child._display_prepare(pretty, new_line, indent, depth_level) for child in self.child_nodes))}"
             f"{''.join([depth_level*indent])}"
         )
 
@@ -394,6 +390,16 @@ class Container(HtmlElement):
 
         return self
 
+class DoctypeDeclaration(Enum):
+    HTML5 = "!DOCTYPE HTML"
+    HTML4_01_STRICT = '!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN"\n"http://www.w3.org/TR/html4/strict.dtd"'
+    HTML4_01_TRANSITIONAL = '!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"\n"http://www.w3.org/TR/html4/loose.dtd"'
+    HTML4_01_FRAMESET = '!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Frameset//EN"\n"http://www.w3.org/TR/html4/frameset.dtd"'
+    XHTML1_0_STRICT = '!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"\n"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"'
+    XHTML1_0_TRANSITIONAL = '!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"\n"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"'
+    XHTML1_0_FRAMESET = '!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Frameset//EN"\n"http://www.w3.org/TR/xhtml1/DTD/xhtml1-frameset.dtd"'
+    XHTML1_1 = '!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN"\n"http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd"'
+    XHTML1_1_BASIC = '!DOCTYPE html PUBLIC "-//W3C//DTD XHTML Basic 1.1//EN"\n"http://www.w3.org/TR/xhtml-basic/xhtml-basic11.dtd"'
 
 class Document(Container):
     """Document container prepared with basic HTML structure.
@@ -404,11 +410,11 @@ class Document(Container):
         Container (_type_): _description_
     """
 
-    def __init__(self, *inner_content, **attributes):
+    def __init__(self, title="Page title", doctype=DoctypeDeclaration.HTML5, *inner_content, **attributes):
         super().__init__()
-        self._head = Head(Meta(charset="utf-8"), Title("Title of the page"))
+        self._head = Head(Meta(charset="utf-8"), Title(title))
         self._body = Body(*inner_content, **attributes)
-        self._child_nodes = Container(Doctype(), Html(self.head, self.body))
+        self._child_nodes = Container(Doctype(declaration=doctype), Html(self.head, self.body))
 
     @property
     def head(self):
@@ -432,19 +438,6 @@ class Document(Container):
 
 ### HTML Elements according to https://www.w3schools.com/tags/ref_byfunc.asp sorted by category
 ## Basic HTML
-
-
-class DoctypeDeclaration(Enum):
-    HTML5 = "!DOCTYPE HTML"
-    HTML4_01_STRICT = '!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN"\n"http://www.w3.org/TR/html4/strict.dtd"'
-    HTML4_01_TRANSITIONAL = '!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"\n"http://www.w3.org/TR/html4/loose.dtd"'
-    HTML4_01_FRAMESET = '!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Frameset//EN"\n"http://www.w3.org/TR/html4/frameset.dtd"'
-    XHTML1_0_STRICT = '!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"\n"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"'
-    XHTML1_0_TRANSITIONAL = '!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"\n"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"'
-    XHTML1_0_FRAMESET = '!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Frameset//EN"\n"http://www.w3.org/TR/xhtml1/DTD/xhtml1-frameset.dtd"'
-    XHTML1_1 = '!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN"\n"http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd"'
-    XHTML1_1_BASIC = '!DOCTYPE html PUBLIC "-//W3C//DTD XHTML Basic 1.1//EN"\n"http://www.w3.org/TR/xhtml-basic/xhtml-basic11.dtd"'
-
 
 class Doctype(SelfClosingElement):
     """Defines the document type."""

@@ -83,10 +83,10 @@ class BooleanHtmlAttribute(HtmlAttribute):
         class_name = getattr(self.__class__, 'display_name', self.__class__.__name__.lower())
         if true_value is None:
             true_value = self.true_value_display
-        elif isinstance(true_value, str):
+        if isinstance(true_value, str):
             try:
-                true_value = BooleanTrueDisplayOption(true_value.lower())
-            except ValueError:
+                true_value = BooleanTrueDisplayOption[true_value.upper()]
+            except KeyError:
                 pass
         if true_value == BooleanTrueDisplayOption.SHORT:
             return f'{class_name}'
