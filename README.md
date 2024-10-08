@@ -9,7 +9,7 @@ By utilizing object-oriented principles this library allows users to construct H
 ```python
 # import tags and attributes
 from generateHtml.tags import Div, H1, P, Hr
-from generateHtml.attributes import Class, Style
+from generateHtml.attributes import Class
 
 # both tags and attributes are represented by classes
 div = Div(
@@ -65,6 +65,15 @@ Outputs in:
   <p>
   </p>
 </div>
+```
+
+### Displaying
+You can use built-in `__str__` for displaying result or method `display()` if you want to edit any of the displaying options.
+```python
+print(Div(H1("Header")).display(pretty=False))
+```
+```html
+<div><h1>Header</h1></div>
 ```
 
 ### Text
@@ -133,7 +142,7 @@ print(Document())
 ## Attributes
 Attributes are like tag elements represented by classes. Class representing attribute have uppercased first letter and every letter after dash `-` character in original attribute name. 
 So for example attribute `accept-charset` has coresponding class name `AcceptCharset`.
-Some of attributes are in conflict with Tag element's names. For this situation underscore character `'_'` is appended at the end of attribute class name. Here is table with conflictiong names:
+Some of attributes are in conflict with Tag element's names. For this situation underscore character `'_'` is appended at the end of attribute class name. Here is table with conflicting names:
 
 | Attribute  | Class      |
 :-----------:|:----------:|
@@ -191,7 +200,7 @@ print(P("Styled paragraph", sty))
 </p>
 ```
 
-## data-* attribute
+### data-* attribute
 With attribute class `Data_` you can create `data-*` attribute that allow us to store extra information on standard, semantic HTML elements without other hacks such as non-standard attributes, or extra properties on DOM.
 ```python
 data = Data_("hidden-id", "1")
