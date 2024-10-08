@@ -964,6 +964,29 @@ class Table(HtmlElement):
                 tagged_content.append(Tr(item_row))
         return tagged_content
 
+    def _create_table(self):
+        container_nodes: list[Container] = [child for child in self.child_nodes if isinstance(child, Container)]
+        if not container_nodes:
+            return
+        container: Container = container_nodes[0]
+        rows: list[Container] = [child for child in container.child_nodes if isinstance(child, Container)]
+        col_count: int | None = len(rows[0]) if rows else None
+        checked_cols: bool = all(len(row) == col_count for row in rows)
+
+        if not checked_cols:
+            return
+
+        table = Container()
+        for row in rows:
+            tab_row = Tr()
+            table.add(tab_row)
+            for col in row:
+                tab_row.add(Td(col))
+        self[self.child_nodes.index(container)] = table
+
+
+
+
     def __init__(
         self,
         *attributes,
@@ -972,8 +995,9 @@ class Table(HtmlElement):
         **kwargs,
     ):
         super().__init__(*attributes, **kwargs)
-        tagged_content = self.check_table_content(content, options)
-        self._child_nodes = tagged_content if tagged_content else self._child_nodes
+        self._create_table()
+        #tagged_content = self.check_table_content(content, options)
+        #self._child_nodes = tagged_content if tagged_content else self._child_nodes
 
 
 ## Styles and Semantics
