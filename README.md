@@ -194,7 +194,23 @@ You can initialize HTML table through `Table` tag class in multiple ways:
     [['Col 1', 'Col 2', 'Col 3'], [1, 2, 3], [4, 5, 6]]
   ))
   ```
+  <table><tr><td>Col 1</td><td>Col 2</td><td>Col 3</td></tr><tr><td>1</td><td>2</td><td>3</td></tr><tr><td>4</td><td>5</td><td>6</td></tr></table>
+
+You can pass header argument:
+```python
+  print(Table(
+    [[1, 2, 3], [4, 5, 6]], header=['Col 1', 'Col 2', 'Col 3']
+  ))
+  ```
+Or explicitly set first row/col or both as header:
+```python
+  print(Table(
+    [['Col 1', 'Col 2', 'Col 3'], [1, 2, 3], [4, 5, 6]], header='row'
+  ))
+  ```
+Both results in this table:
   <table><tr><th>Col 1</th><th>Col 2</th><th>Col 3</th></tr><tr><td>1</td><td>2</td><td>3</td></tr><tr><td>4</td><td>5</td><td>6</td></tr></table>
+
 </details>
 
 <!---
@@ -266,7 +282,7 @@ print(P("Styled paragraph", sty))
 </p>
 ```
 
-### data-* attribute
+### `data-*` attribute
 With attribute class `Data_` you can create `data-*` attribute that allow us to store extra information on standard, semantic HTML elements without other hacks such as non-standard attributes, or extra properties on DOM.
 ```python
 data = Data_("hidden-id", "1")
@@ -279,6 +295,7 @@ print(Div(data, data_col=5))
 
 
 ## Manipulating objects
+### `+` operator
 Two tags can be concatenated using `+` operator. Results in parent `Container` tag containing both concatenating tags.
 ```python
 p1 = P("First paragraph")
@@ -295,7 +312,7 @@ print(p1 + p2)
 </p>
 ```
 
-
+### `add` method
 New items into created tags can be added via `add()` method.
 - You can add tags, attributes or text into tag.
 - Into text nodes you can append another text via `add()` method.
@@ -314,7 +331,7 @@ print(div)
   </p>
 </div>
 ```
-
+### `*` operator
 Tags can be multiplicated with positive `int` number using `*` multiplication sign. Results in parent `Container` object:
 ```python
 p = P("Paragraph")
@@ -333,7 +350,7 @@ print(p * 3)
 </p>
 ```
 
-
+### `list` notation
 Child nodes of the tag can be accesed through python list notation:
 ```python
 div = Div(P("First paragraph"), Br(), P('Second paragraph class'))
@@ -354,7 +371,7 @@ print(div)
   </strong>
 </div>
 ```
-
+### `dict` notation
 Attributes can be accesed, modified or deleted from tag object through dictionary notation:
 ```python
 div = Div(Class("container"), Id("main"))
