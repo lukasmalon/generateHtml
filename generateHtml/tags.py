@@ -19,8 +19,8 @@ from generateHtml.utils import get_class_from_string, escape_html
 
 
 class HtmlElement(ContextElement):
-    """Base class containing properties used in all html element tags.
-    """
+    """Base class containing properties used in all html element tags."""
+
     def __init__(self, *inner_content, **attributes):
         super().__init__()
         self._child_nodes: list[HtmlElement | Text] = []
@@ -50,7 +50,7 @@ class HtmlElement(ContextElement):
                 )
 
                 predashed_part: str | None = (
-                    ''.join((a.capitalize() for a in splitted))
+                    "".join((a.capitalize() for a in splitted))
                     if splitted[0] not in _DASHED_ATTRIBUTES
                     else splitted[0].capitalize()
                 )
@@ -61,11 +61,11 @@ class HtmlElement(ContextElement):
                     else ""
                 )
 
-                attribute_class = (
-                    f"{predashed_part}{underscoring_collision}"
-                )
+                attribute_class = f"{predashed_part}{underscoring_collision}"
                 # Use key to find HtmlAttribute class and then initialize it with val as argument
-                attribute_class_ = get_class_from_string("generateHtml.attributes", attribute_class)
+                attribute_class_ = get_class_from_string(
+                    "generateHtml.attributes", attribute_class
+                )
                 self.attributes[attribute_key] = (
                     attribute_class_(after_dash_part, val)
                     if issubclass(attribute_class_, DashedHtmlAttribute)
@@ -76,7 +76,7 @@ class HtmlElement(ContextElement):
                     f"Value {val} for the key {key} has to be str or HtmlAttribute. Got '{type(val)}'"
                 )
 
-    def _parse_inner_content(self, inner_content, index: int|None = None) -> None:
+    def _parse_inner_content(self, inner_content, index: int | None = None) -> None:
         """Method to extract HTML child nodes and HTML node attributes from iterable item."""
         if index is not None and isinstance(index, int) and len(self) < index:
             raise IndexError("Out of range while inserting into child list.")
@@ -87,8 +87,8 @@ class HtmlElement(ContextElement):
             if isinstance(attr, object) and issubclass(type(attr), HtmlAttribute):
                 if self.attributes.get(attr.name_to_string()):
                     raise DuplicateAttributeError(
-                    f"Attribute {attr.name_to_string()} is already defined in tag {self}"
-                )
+                        f"Attribute {attr.name_to_string()} is already defined in tag {self}"
+                    )
                 self.attributes[attr.name_to_string()] = attr
                 self._validate_attributes()
                 self._remove_from_context(attr)
@@ -101,7 +101,7 @@ class HtmlElement(ContextElement):
             elif isinstance(attr, (Text, str, int, float)):
                 text_node = Text(str(attr)) if not isinstance(attr, Text) else attr
                 if index is not None:
-                    self.child_nodes[index] = attr
+                    self.child_nodes[index] = text_node
                     index += 1
                 else:
                     self.child_nodes.append(text_node)
@@ -189,7 +189,9 @@ class HtmlElement(ContextElement):
 
             val = self.attributes.get(attribute_key)
             if val is None:
-                raise KeyError(f"Attribute: '{attribute_key}' does not exist in element.")
+                raise KeyError(
+                    f"Attribute: '{attribute_key}' does not exist in element."
+                )
             return val
         elif isinstance(key, int):
             return self.child_nodes[key]
@@ -204,7 +206,9 @@ class HtmlElement(ContextElement):
                 self._parse_attributes({key: value})
                 self._validate_attributes()
             else:
-                raise TypeError("You can only add new value of tag's attribute as 'str', 'float' or 'int' through dictionary notation.")
+                raise TypeError(
+                    "You can only add new value of tag's attribute as 'str', 'float' or 'int' through dictionary notation."
+                )
         elif isinstance(key, int):
             if len(self) < key:
                 raise IndexError("Out of range while inserting into child list.")
@@ -217,11 +221,14 @@ class HtmlElement(ContextElement):
             self.add(value, index=key)
 
         elif isinstance(key, slice):
-            #TODO: Slice adding
-            raise NotImplementedError("Adding new items through slice notation is not implemented yet")
+            # TODO: Slice adding
+            raise NotImplementedError(
+                "Adding new items through slice notation is not implemented yet"
+            )
         else:
-            raise KeyError(f"Wrong key type {type(key)}. Try int for accesing elemnt's children or str for attributes.")
-        
+            raise KeyError(
+                f"Wrong key type {type(key)}. Try int for accesing elemnt's children or str for attributes."
+            )
 
     def __delitem__(self, key):
         if isinstance(key, str):
@@ -232,7 +239,9 @@ class HtmlElement(ContextElement):
             if val:
                 del self.attributes[attribute_key]
             else:
-                raise KeyError(f"Attribute: '{attribute_key}' does not exist in element.")
+                raise KeyError(
+                    f"Attribute: '{attribute_key}' does not exist in element."
+                )
         elif isinstance(key, int):
             if len(self) < key:
                 raise IndexError(f"Index '{key}' out of range in child nodes.")
@@ -271,15 +280,17 @@ class HtmlElement(ContextElement):
                 f"can't multiply sequence by non-int of type '{type(other)}'"
             )
         if other < 0:
-            raise ValueError(
-                f"can't multiply sequence by negative values: '{other}'"
-            )
+            raise ValueError(f"can't multiply sequence by negative values: '{other}'")
         new_container = Container()
         for _ in range(other):
             new_container.add(self)
         return new_container
 
-    def add(self, *new_child: HtmlElement | HtmlAttribute | Text | int | str | float, index: int|None = None):
+    def add(
+        self,
+        *new_child: HtmlElement | HtmlAttribute | Text | int | str | float,
+        index: int | None = None,
+    ):
         """Main method for adding new attributes, child html elements or text nodes into existing objects"""
         self._parse_inner_content(new_child, index=index)
 
@@ -312,9 +323,9 @@ class Text(ContextElement):
         elif isinstance(text, (int, float, str)):
             text = str(text)
         elif text is None:
-            text = ''
+            text = ""
         else:
-            raise TypeError(f'Unsupported type for Text node value: {type(text)}')
+            raise TypeError(f"Unsupported type for Text node value: {type(text)}")
         self.value: str = escape_html(text)
 
     def add(self, *new_child: Text | int | str | float):
@@ -325,7 +336,9 @@ class Text(ContextElement):
                     f"Into class {self.__class__.__name__} you can only add another text!"
                 )
 
-            self.value += child.value if isinstance(child, Text) else escape_html(str(child))
+            self.value += (
+                child.value if isinstance(child, Text) else escape_html(str(child))
+            )
         return self
 
     def __len__(self) -> int:
@@ -350,7 +363,11 @@ class Text(ContextElement):
         new_line = new_line if pretty else ""
         indent = indent if pretty else ""
 
-        return f"{new_line if depth_level else ''}{depth_level*indent if depth_level else ''}{self.value}" if pretty else self.value
+        return (
+            f"{new_line if depth_level else ''}{depth_level*indent if depth_level else ''}{self.value}"
+            if pretty
+            else self.value
+        )
 
 
 class Container(HtmlElement):
@@ -374,13 +391,14 @@ class Container(HtmlElement):
         indent = indent if pretty else ""
 
         return (
-            f"{''.join([depth_level*indent])}"
-            f"{new_line.join((child._display_prepare(pretty, new_line, indent, depth_level) for child in self.child_nodes))}"
-            f"{''.join([depth_level*indent])}"
+            f"{depth_level*indent}{new_line.join((child._display_prepare(pretty, new_line, indent, depth_level) for child in self.child_nodes))}"
         )
 
-
-    def add(self, *new_child: HtmlElement | Text | int | str | float, index: int|None = None):
+    def add(
+        self,
+        *new_child: HtmlElement | Text | int | str | float,
+        index: int | None = None,
+    ):
         """Main method for adding new attributes, child html elements or text nodes into existing objects"""
         self._parse_inner_content(new_child, index=index)
         if self.attributes:
@@ -389,6 +407,7 @@ class Container(HtmlElement):
             )
 
         return self
+
 
 class DoctypeDeclaration(Enum):
     HTML5 = "!DOCTYPE HTML"
@@ -401,20 +420,27 @@ class DoctypeDeclaration(Enum):
     XHTML1_1 = '!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN"\n"http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd"'
     XHTML1_1_BASIC = '!DOCTYPE html PUBLIC "-//W3C//DTD XHTML Basic 1.1//EN"\n"http://www.w3.org/TR/xhtml-basic/xhtml-basic11.dtd"'
 
+
 class Document(Container):
     """Document container prepared with basic HTML structure.
        Add function adds everything into document's body element.
        Enables accessing into head and body properties.
 
-    Args:
-        Container (_type_): _description_
     """
 
-    def __init__(self, title="Page title", doctype=DoctypeDeclaration.HTML5, *inner_content, **attributes):
+    def __init__(
+        self,
+        title="Page title",
+        doctype=DoctypeDeclaration.HTML5,
+        *inner_content,
+        **attributes,
+    ):
         super().__init__()
         self._head = Head(Meta(charset="utf-8"), Title(title))
         self._body = Body(*inner_content, **attributes)
-        self._child_nodes = Container(Doctype(declaration=doctype), Html(self.head, self.body))
+        self._child_nodes = Container(
+            Doctype(declaration=doctype), Html(self.head, self.body)
+        )
 
     @property
     def head(self):
@@ -424,7 +450,11 @@ class Document(Container):
     def body(self):
         return self._body
 
-    def add(self, *new_child: HtmlElement | Text | int | str | float, index: int | None = None):
+    def add(
+        self,
+        *new_child: HtmlElement | Text | int | str | float,
+        index: int | None = None,
+    ):
         """Main method for adding new attributes, child html elements or text nodes into existing objects"""
         self.body._parse_inner_content(new_child, index=index)
 
@@ -438,6 +468,7 @@ class Document(Container):
 
 ### HTML Elements according to https://www.w3schools.com/tags/ref_byfunc.asp sorted by category
 ## Basic HTML
+
 
 class Doctype(SelfClosingElement):
     """Defines the document type."""
@@ -530,8 +561,8 @@ class Comment(HtmlElement):
         indent = indent if pretty else ""
         attribute_space = " " if self.attributes else ""
 
-        start_condition = f"<!--[if {self._condition}]>" if self._condition else '<!--'
-        end_condition = '<![endif]-->' if self._condition else '-->'
+        start_condition = f"<!--[if {self._condition}]>" if self._condition else "<!--"
+        end_condition = "<![endif]-->" if self._condition else "-->"
         return (
             f"{''.join((new_line, depth_level*indent)) if depth_level else ''}"
             f"{start_condition}{attribute_space}{' '.join((attr._display_prepare() for key, attr in self.attributes))}"
@@ -606,7 +637,7 @@ class Font(HtmlElement):
     Defines font, color, and size for text."""
 
 
-class I(HtmlElement):
+class I(HtmlElement):  # noqa: E742
     """Defines a part of text in an alternate voice or mood."""
 
 
@@ -983,9 +1014,6 @@ class Table(HtmlElement):
             for col in row:
                 tab_row.add(Td(col))
         self[self.child_nodes.index(container)] = table
-
-
-
 
     def __init__(
         self,
