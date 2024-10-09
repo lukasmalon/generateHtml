@@ -296,6 +296,83 @@ class HtmlElement(ContextElement):
 
         return self
 
+    def find(self, element: HtmlElement) -> list[HtmlElement]:
+        return self._find(element)
+
+    def _find(
+        self, element: HtmlElement | Text, results: list[HtmlElement | Text] = None
+    ) -> list[HtmlElement | Text]:
+        if results is None:
+            results = []
+
+        if isinstance(element, HtmlElement):
+            # Check self
+            if (
+                isinstance(self, type(element))
+                and self._match_attributes(self, element)
+                and self._match_specified_children(self, element)
+            ):
+                results.append(self)
+
+            # Check child_nodes if HtmlElement class
+            for child in self.child_nodes:
+                if isinstance(child, (HtmlElement)):
+                    child._find(element, results)
+
+        elif isinstance(element, Text):
+            for child in self.child_nodes:
+                if isinstance(child, Text) and element.value in child.value:
+                    results.append(child)
+                elif isinstance(child, HtmlElement):
+                    child._find(element, results)
+
+        return results
+
+    def _match_attributes(self, first_element: HtmlElement, second_element: HtmlElement) -> bool:
+        """Helper method to compare attributes of two elements."""
+        if not (isinstance(first_element, HtmlElement) and isinstance(second_element, HtmlElement)):
+            return True
+
+        for key, val in second_element.attributes.items():
+            if key not in first_element.attributes:
+                return False
+            if val.value not in first_element.attributes[key].value:
+                return False
+        return True
+
+    def _match_specified_children(
+        self, child: HtmlElement, element: HtmlElement
+    ) -> bool:
+        """Helper method to check that all specified children in `element` are present in `child`."""
+
+        if not element.child_nodes:
+            return True
+
+        # Check if element childs are in child_nodes of self
+        for element_child in element.child_nodes:
+            matched = False
+            for child_node in child.child_nodes:
+                if isinstance(child_node, type(element_child)):
+                    if (
+                        isinstance(element_child, Text)
+                        and element_child.value in child_node.value
+                    ):
+                        matched = True
+                        break
+                    elif isinstance(
+                        element_child, HtmlElement
+                    ) and self._match_attributes(child_node, element_child):
+                        matched = self._match_specified_children(
+                            child_node, element_child
+                        )
+                        if matched:
+                            break
+
+            if not matched:
+                return False
+
+        return True
+
     @property
     def child_nodes(self) -> list[HtmlElement | Text]:
         return self._child_nodes
