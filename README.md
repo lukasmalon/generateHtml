@@ -215,7 +215,7 @@ Both results in this table:
 
 <!---
 ### Document container
-For fast html page prototyping you can use  `Document` class. It creates basic HTML page with `head` and `body` tags accesible via `Document` object properties. Adding tags into Document class will automatically adds everything into `body` tag.
+For fast html page prototyping you can use `Document` class. It creates basic HTML page with `head` and `body` tags accesible via `Document` object properties. Adding tags into Document class will automatically adds everything into `body` tag.
 ```python
 print(Document())
 ```
@@ -383,6 +383,34 @@ print(div)
 ```html
 <div class="new_container">
 </div>
+```
+
+### `find` method
+HTML elements can be searched inside another using `find` method:
+```python
+div = Div(
+      P("Foo bar baz"),
+      Img(Src("img.png")),
+      Id("foo"),
+      Ol(Class("bar"),
+      *[Li(i) for i in range(10)]),
+      Em("bar"),
+      Div(Id("inner_div")))
+
+div.find(Div()) # Finds all divs in div (including self)
+# return 2 divs: [<:: Div element: 4 child nodes, 1 attributes ::>, <:: Div element: no childs, 1 attributes ::>]
+
+div.find(Div(Id("inner_div"))) # Finds all divs with id="inner_div"
+# return 1 div: [<:: Div element: no childs, 1 attributes ::>]
+
+div.find(Li(1)) # Finds all li with text "1"
+# return 1 li: [<:: Li element: 1 child nodes ::>]
+
+div.find(Li(1)) # Finds all li with text "1"
+# return 1 li: [<:: Li element: 1 child nodes ::>]
+
+div.find("bar") # Finds all Text nodes containing 'bar'
+# return 2 Text nodes: [<:: Text: "Foo bar ba..." ::>, <:: Text: "bar" ::>]
 ```
 
 ## Context manager
