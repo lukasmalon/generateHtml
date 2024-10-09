@@ -296,7 +296,19 @@ class HtmlElement(ContextElement):
 
         return self
 
-    def find(self, element: HtmlElement) -> list[HtmlElement]:
+    def find(self, element: HtmlElement|Text|str|int|float) -> list[HtmlElement]:
+        """Finds `element` tag in HtmlElement object.
+
+        Parameters
+        ----------
+        element : HtmlElement|Text|str|int|float
+            Element you're searching for.
+
+        Returns
+        -------
+        list[HtmlElement|Text]
+            Returns list of matched elements.
+        """
         return self._find(element)
 
     def _find(
@@ -304,6 +316,11 @@ class HtmlElement(ContextElement):
     ) -> list[HtmlElement | Text]:
         if results is None:
             results = []
+
+        if isinstance(element, (str, int, float)):
+            element = Text(element)
+
+        self._remove_from_context(element)
 
         if isinstance(element, HtmlElement):
             # Check self
