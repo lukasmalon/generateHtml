@@ -964,7 +964,12 @@ class Table(HtmlElement):
                 tagged_content.append(Tr(item_row))
         return tagged_content
 
-    def _create_table(self):
+    def _create_table(self, header):
+        if header is not None:
+            if isinstance(header, (str)):
+                if header == 'row':
+                    pass
+
         container_nodes: list[Container] = [child for child in self.child_nodes if isinstance(child, Container)]
         if not container_nodes:
             return
@@ -982,22 +987,19 @@ class Table(HtmlElement):
             table.add(tab_row)
             for col in row:
                 tab_row.add(Td(col))
-        self[self.child_nodes.index(container)] = table
-
-
-
+        idx = self.child_nodes.index(container)
+        del self.child_nodes[idx]
+        self.add(*table)
 
     def __init__(
         self,
         *attributes,
-        content: list[list] = list(),
+        header: None | str | list[str|HtmlElement]=None,
         options: dict[TableOption, HeaderOption] = {},
         **kwargs,
     ):
         super().__init__(*attributes, **kwargs)
-        self._create_table()
-        #tagged_content = self.check_table_content(content, options)
-        #self._child_nodes = tagged_content if tagged_content else self._child_nodes
+        self._create_table(header)
 
 
 ## Styles and Semantics
