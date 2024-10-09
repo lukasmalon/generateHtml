@@ -920,56 +920,21 @@ class Colgroup(HtmlElement):
 class Table(HtmlElement):
     """Class defining table element."""
 
-    @staticmethod
-    def check_table_content(content, options: dict[TableOption, HeaderOption] = {}):
-        header = options.get(TableOption.HEADER.value, None)
+    def _create_table(self, header: None|str|list[HtmlElement|Text|str|int|float]) -> None:
+        """Checks if Table has Container of Containers elements (created from list[list[HtmlElement|Text|str|int|float]])
+        and converts them to HTML Table related tags.
 
-        tagged_content = list()
-        for row_idx, row in enumerate(content):
-            if isinstance(row, (list, tuple)):
-                item_row = list()
-                for col_idx, item in enumerate(row):
-                    if isinstance(item, (Text, str, int, float)):
-                        if header is not None and (
-                            (
-                                col_idx == 0
-                                and header
-                                in (HeaderOption.BOTH.value, HeaderOption.COLUMN.value)
-                            )
-                            or (
-                                row_idx == 0
-                                and header
-                                in (HeaderOption.BOTH.value, HeaderOption.ROW.value)
-                            )
-                        ):
-                            item_row.append(Th(item))
-                        else:
-                            item_row.append(Td(item))
-                    elif isinstance(item, (HtmlElement)):
-                        if header is not None and (
-                            (
-                                col_idx == 0
-                                and header
-                                in (HeaderOption.BOTH.value, HeaderOption.COLUMN.value)
-                            )
-                            or (
-                                row_idx == 0
-                                and header
-                                in (HeaderOption.BOTH.value, HeaderOption.ROW.value)
-                            )
-                        ):
-                            item_row.append(Th(item))
-                        else:
-                            item_row.append(item)
-                tagged_content.append(Tr(item_row))
-        return tagged_content
+        Parameters
+        ----------
+        header : str|list[HtmlElement|Text|str|int|float]
+            specifies Table header as str: 'row', 'col' or 'both' option
+                                   as list[HtmlElement|Text|str|int|float]: needs to have same number of items as table row length
 
-    def _create_table(self, header):
-        if header is not None:
-            if isinstance(header, (str)):
-                if header == 'row':
-                    pass
-
+        Raises
+        ------
+        IllegalCompositionError
+            Table was wrongly builded.
+        """
         container_nodes: list[Container] = [child for child in self.child_nodes if isinstance(child, Container)]
         if not container_nodes:
             return
@@ -981,12 +946,25 @@ class Table(HtmlElement):
         if not checked_cols:
             return
 
-        table = Container()
-        for row in rows:
+        table: HtmlElement = Container()
+        if isinstance(header, (list, tuple)):
+            if len(header) != col_count:
+                raise IllegalCompositionError(f"Table header length ({len(header)}) don't match table row length ({col_count}).")
+            header_row = Tr(*[Th(head_cell) for head_cell in header])
+            table.add(header_row)
+        for row_num, row in enumerate(rows):
             tab_row = Tr()
             table.add(tab_row)
-            for col in row:
-                tab_row.add(Td(col))
+            for col_num, col in enumerate(row):
+                if header == 'row' and row_num == 0:
+                    tab_row.add(Th(col))
+                elif header == 'col' and col_num == 0:
+                    tab_row.add(Th(col))
+                elif header == 'both' and row_num == 0 and col_num == 0:
+                    tab_row.add(Th(col))
+                else:
+                    tab_row.add(Td(col))
+        
         idx = self.child_nodes.index(container)
         del self.child_nodes[idx]
         self.add(*table)
@@ -994,7 +972,7 @@ class Table(HtmlElement):
     def __init__(
         self,
         *attributes,
-        header: None | str | list[str|HtmlElement]=None,
+        header: None | str | list[str|HtmlElement] = None,
         options: dict[TableOption, HeaderOption] = {},
         **kwargs,
     ):
