@@ -2,14 +2,17 @@ from __future__ import annotations
 from contextvars import ContextVar
 from abc import abstractmethod, ABC
 
+
 class ContextStack(ABC):
-    _context_var: ContextVar[list[list[ContextStack]|None]] = ContextVar("storage", default=None)
+    _context_var: ContextVar[list[list[ContextStack]] | None] = ContextVar(
+        "storage", default=None
+    )
 
     def __init__(self):
         self._add_to_context(self)
 
     @property
-    def _context_elements(self) -> list[list[ContextStack]]:
+    def _context_elements(self) -> list[list[ContextStack]] | None:
         context_elements = self._context_var.get()
         if context_elements is None:
             context_elements = []

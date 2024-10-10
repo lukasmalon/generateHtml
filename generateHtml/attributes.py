@@ -25,11 +25,11 @@ class HtmlAttribute(ContextElement):
         """
         return prepend_dash_before_uppercase(self.__class__.__name__).lower().replace('_', '-').strip('-')
 
-    @staticmethod
-    def check_attribute_value(value) -> str:
+    @classmethod
+    def check_attribute_value(cls, value) -> str:
         if not (isinstance(value, (float, int, str))):
-            raise TypeError(f"Wrong data type used for attribute {__class__.__name__}: "\
-                                    f"Got {type(value)} expected str.")        
+            raise TypeError(f"Wrong data type used for attribute {cls.__name__}: "\
+                                    f"Got {type(value)} expected str.")
         return str(value)
 
     def __init__(self, value: float|int|str):
@@ -65,6 +65,8 @@ class HtmlAttribute(ContextElement):
 
     @value.setter
     def value(self, value: float|int|str):
+        if isinstance(value, (int, float)):
+                value = str(value)
         self._value = value
 
 class BooleanTrueDisplayOption(Enum):
@@ -117,7 +119,7 @@ class DashedHtmlAttribute(HtmlAttribute):
     def _display_prepare(self) -> str:
         return f'{self.name}="{self._value}"'
 
-    def name_to_string(self: HtmlAttribute) -> str:
+    def name_to_string(self: DashedHtmlAttribute) -> str:
         """Converts class name into original attribute format.
 
         Parameters

@@ -1,6 +1,7 @@
 from __future__ import annotations
 from enum import Enum
 from copy import deepcopy
+from typing import Iterator
 
 from generateHtml.context import ContextStack as ContextElement
 from generateHtml.attributes import (
@@ -21,7 +22,11 @@ from generateHtml.utils import get_class_from_string, escape_html
 class HtmlElement(ContextElement):
     """Base class containing properties used in all html element tags."""
 
-    def __init__(self, *inner_content, **attributes):
+    def __init__(
+        self,
+        *inner_content: HtmlElement | HtmlAttribute | Text | str | int | float,
+        **attributes: HtmlAttribute | str,
+    ):
         super().__init__()
         self._child_nodes: list[HtmlElement | Text] = []
         self._attributes: dict[str, HtmlAttribute] = {}
@@ -43,7 +48,7 @@ class HtmlElement(ContextElement):
 
                 # Convert kwargs attribute name into class name
                 splitted: list[str] = attribute_key.split("-", 1)
-                after_dash_part: str | None = (
+                after_dash_part: str = (
                     splitted[1]
                     if len(splitted) > 1 and splitted[0] in _DASHED_ATTRIBUTES
                     else ""
@@ -84,7 +89,7 @@ class HtmlElement(ContextElement):
         for attr in inner_content:
             if self is attr:  # Preventing circular dependency
                 attr = deepcopy(attr)
-            if isinstance(attr, object) and issubclass(type(attr), HtmlAttribute):
+            if issubclass(type(attr), HtmlAttribute):
                 if self.attributes.get(attr.name_to_string()):
                     raise DuplicateAttributeError(
                         f"Attribute {attr.name_to_string()} is already defined in tag {self}"
@@ -92,7 +97,7 @@ class HtmlElement(ContextElement):
                 self.attributes[attr.name_to_string()] = attr
                 self._validate_attributes()
                 self._remove_from_context(attr)
-            elif isinstance(attr, object) and issubclass(type(attr), HtmlElement):
+            elif issubclass(type(attr), HtmlElement):
                 if index is not None:
                     self.child_nodes[index] = attr
                     index += 1
@@ -182,7 +187,7 @@ class HtmlElement(ContextElement):
             f"{f', {len(self.attributes)} attributes' if self.attributes else ''} ::>"
         )
 
-    def __getitem__(self, key):
+    def __getitem__(self, key: str | int | slice):
         if isinstance(key, str):
             # Convert kwargs attribute name into dict value (as original HTML)
             attribute_key: str = key.lower().strip("-").replace("_", "-")
@@ -200,7 +205,7 @@ class HtmlElement(ContextElement):
         else:
             raise KeyError(f"Invalid key type: {key}")
 
-    def __setitem__(self, key, value):
+    def __setitem__(self, key: str | int | slice, value):
         if isinstance(key, str):
             if isinstance(value, (str, float, int)):
                 self._parse_attributes({key: value})
@@ -230,7 +235,7 @@ class HtmlElement(ContextElement):
                 f"Wrong key type {type(key)}. Try int for accesing elemnt's children or str for attributes."
             )
 
-    def __delitem__(self, key):
+    def __delitem__(self, key: str | int | slice):
         if isinstance(key, str):
             # Convert kwargs attribute name into dict value (as original HTML)
             attribute_key: str = key.lower().strip("-").replace("_", "-")
@@ -251,19 +256,24 @@ class HtmlElement(ContextElement):
         else:
             raise KeyError(f"Invalid key type: {key}")
 
-    def __len__(self):
+    def __iter__(self) -> Iterator[HtmlElement | Text]:
+        return iter(self.child_nodes)
+
+    def __len__(self) -> int:
         return len(self.child_nodes)
 
-    def __add__(self, other):
+    def __add__(self, other) -> HtmlElement:
         if isinstance(other, HtmlElement):
             return Container(self, other)
-        elif isinstance(other, (HtmlAttribute, Text, str, float, int)):
+        elif isinstance(other, (HtmlAttribute)):
             self.add(other)
             return self
+        elif isinstance(other, (Text, str, float, int)):
+            return Container(self, other)
         else:
             raise TypeError(f"canot merge '{type(self)}' of type '{type(other)}'")
 
-    def __radd__(self, other):
+    def __radd__(self, other) -> HtmlElement:
         if isinstance(other, HtmlElement):
             return Container(other, self)
         elif isinstance(other, (HtmlAttribute)):
@@ -274,7 +284,7 @@ class HtmlElement(ContextElement):
         else:
             raise TypeError(f"canot merge '{type(self)}' of type '{type(other)}'")
 
-    def __mul__(self, other: int):
+    def __mul__(self, other: int) -> HtmlElement:
         if not isinstance(other, int):
             raise TypeError(
                 f"can't multiply sequence by non-int of type '{type(other)}'"
@@ -290,13 +300,15 @@ class HtmlElement(ContextElement):
         self,
         *new_child: HtmlElement | HtmlAttribute | Text | int | str | float,
         index: int | None = None,
-    ):
+    ) -> HtmlElement:
         """Main method for adding new attributes, child html elements or text nodes into existing objects"""
         self._parse_inner_content(new_child, index=index)
 
         return self
 
-    def find(self, element: HtmlElement|Text|str|int|float) -> list[HtmlElement]:
+    def find(
+        self, element: HtmlElement | Text | str | int | float
+    ) -> list[HtmlElement | Text]:
         """Finds `element` tag in HtmlElement object.
 
         Parameters
@@ -312,7 +324,9 @@ class HtmlElement(ContextElement):
         return self._find(element)
 
     def _find(
-        self, element: HtmlElement | Text, results: list[HtmlElement | Text] = None
+        self,
+        element: HtmlElement | Text | str | int | float,
+        results: list[HtmlElement | Text] | None = None,
     ) -> list[HtmlElement | Text]:
         if results is None:
             results = []
@@ -345,9 +359,14 @@ class HtmlElement(ContextElement):
 
         return results
 
-    def _match_attributes(self, first_element: HtmlElement, second_element: HtmlElement) -> bool:
+    def _match_attributes(
+        self, first_element: HtmlElement, second_element: HtmlElement
+    ) -> bool:
         """Helper method to compare attributes of two elements."""
-        if not (isinstance(first_element, HtmlElement) and isinstance(second_element, HtmlElement)):
+        if not (
+            isinstance(first_element, HtmlElement)
+            and isinstance(second_element, HtmlElement)
+        ):
             return True
 
         for key, val in second_element.attributes.items():
@@ -372,13 +391,16 @@ class HtmlElement(ContextElement):
                 if isinstance(child_node, type(element_child)):
                     if (
                         isinstance(element_child, Text)
+                        and isinstance(child_node, Text)
                         and element_child.value in child_node.value
                     ):
                         matched = True
                         break
-                    elif isinstance(
-                        element_child, HtmlElement
-                    ) and self._match_attributes(child_node, element_child):
+                    elif (
+                        isinstance(element_child, HtmlElement)
+                        and isinstance(child_node, HtmlElement)
+                        and self._match_attributes(child_node, element_child)
+                    ):
                         matched = self._match_specified_children(
                             child_node, element_child
                         )
@@ -438,7 +460,7 @@ class Text(ContextElement):
     def __len__(self) -> int:
         return self.value.__len__()
 
-    def __iter__(self) -> int:
+    def __iter__(self) -> Iterator[str]:
         return self.value.__iter__()
 
     def __str__(self) -> str:
@@ -484,13 +506,11 @@ class Container(HtmlElement):
         new_line = new_line if pretty else ""
         indent = indent if pretty else ""
 
-        return (
-            f"{depth_level*indent}{new_line.join((child._display_prepare(pretty, new_line, indent, depth_level) for child in self.child_nodes))}"
-        )
+        return f"{depth_level*indent}{new_line.join((child._display_prepare(pretty, new_line, indent, depth_level) for child in self.child_nodes))}"
 
     def add(
         self,
-        *new_child: HtmlElement | Text | int | str | float,
+        *new_child: HtmlElement | HtmlAttribute | Text | int | str | float,
         index: int | None = None,
     ):
         """Main method for adding new attributes, child html elements or text nodes into existing objects"""
@@ -505,11 +525,26 @@ class Container(HtmlElement):
 
 class DoctypeDeclaration(Enum):
     HTML5 = "!DOCTYPE HTML"
-    HTML4_01_STRICT = '!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN"\n"http://www.w3.org/TR/html4/strict.dtd"'
-    HTML4_01_TRANSITIONAL = '!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"\n"http://www.w3.org/TR/html4/loose.dtd"'
-    HTML4_01_FRAMESET = '!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Frameset//EN"\n"http://www.w3.org/TR/html4/frameset.dtd"'
-    XHTML1_0_STRICT = '!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"\n"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"'
-    XHTML1_0_TRANSITIONAL = '!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"\n"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"'
+    HTML4_01_STRICT = (
+        '!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN"\n'
+        '"http://www.w3.org/TR/html4/strict.dtd"'
+    )
+    HTML4_01_TRANSITIONAL = (
+        '!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"\n'
+        '"http://www.w3.org/TR/html4/loose.dtd"'
+    )
+    HTML4_01_FRAMESET = (
+        '!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Frameset//EN"\n'
+        '"http://www.w3.org/TR/html4/frameset.dtd"'
+    )
+    XHTML1_0_STRICT = (
+        '!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"\n'
+        '"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"'
+    )
+    XHTML1_0_TRANSITIONAL = (
+        '!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"\n'
+        '"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"'
+    )
     XHTML1_0_FRAMESET = '!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Frameset//EN"\n"http://www.w3.org/TR/xhtml1/DTD/xhtml1-frameset.dtd"'
     XHTML1_1 = '!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN"\n"http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd"'
     XHTML1_1_BASIC = '!DOCTYPE html PUBLIC "-//W3C//DTD XHTML Basic 1.1//EN"\n"http://www.w3.org/TR/xhtml-basic/xhtml-basic11.dtd"'
@@ -517,8 +552,8 @@ class DoctypeDeclaration(Enum):
 
 class Document(Container):
     """Document container prepared with basic HTML structure.
-       Add function adds everything into document's body element.
-       Enables accessing into head and body properties.
+    Add function adds everything into document's body element.
+    Enables accessing into head and body properties.
 
     """
 
@@ -546,7 +581,7 @@ class Document(Container):
 
     def add(
         self,
-        *new_child: HtmlElement | Text | int | str | float,
+        *new_child: HtmlElement | HtmlAttribute | Text | int | str | float,
         index: int | None = None,
     ):
         """Main method for adding new attributes, child html elements or text nodes into existing objects"""
@@ -659,7 +694,7 @@ class Comment(HtmlElement):
         end_condition = "<![endif]-->" if self._condition else "-->"
         return (
             f"{''.join((new_line, depth_level*indent)) if depth_level else ''}"
-            f"{start_condition}{attribute_space}{' '.join((attr._display_prepare() for key, attr in self.attributes))}"
+            f"{start_condition}{attribute_space}{' '.join((attr._display_prepare() for key, attr in self.attributes.items()))}"
             f"{''.join((child._display_prepare(pretty, new_line, indent, depth_level+1) for child in self.child_nodes))}"
             f"{new_line + (depth_level*indent) + end_condition}"
             f"{new_line if depth_level and not self.child_nodes else ''}"
@@ -1045,7 +1080,9 @@ class Colgroup(HtmlElement):
 class Table(HtmlElement):
     """Class defining table element."""
 
-    def _create_table(self, header: None|str|list[HtmlElement|Text|str|int|float]) -> None:
+    def _create_table(
+        self, header: None | str | list[HtmlElement | Text | str | int | float]
+    ) -> None:
         """Checks if Table has Container of Containers elements (created from list[list[HtmlElement|Text|str|int|float]])
         and converts them to HTML Table related tags.
 
@@ -1060,11 +1097,15 @@ class Table(HtmlElement):
         IllegalCompositionError
             Table was wrongly builded.
         """
-        container_nodes: list[Container] = [child for child in self.child_nodes if isinstance(child, Container)]
+        container_nodes: list[Container] = [
+            child for child in self.child_nodes if isinstance(child, Container)
+        ]
         if not container_nodes:
             return
         container: Container = container_nodes[0]
-        rows: list[Container] = [child for child in container.child_nodes if isinstance(child, Container)]
+        rows: list[Container] = [
+            child for child in container.child_nodes if isinstance(child, Container)
+        ]
         col_count: int | None = len(rows[0]) if rows else None
         checked_cols: bool = all(len(row) == col_count for row in rows)
 
@@ -1074,22 +1115,24 @@ class Table(HtmlElement):
         table: HtmlElement = Container()
         if isinstance(header, (list, tuple)):
             if len(header) != col_count:
-                raise IllegalCompositionError(f"Table header length ({len(header)}) don't match table row length ({col_count}).")
+                raise IllegalCompositionError(
+                    f"Table header length ({len(header)}) don't match table row length ({col_count})."
+                )
             header_row = Tr(*[Th(head_cell) for head_cell in header])
             table.add(header_row)
         for row_num, row in enumerate(rows):
             tab_row = Tr()
             table.add(tab_row)
             for col_num, col in enumerate(row):
-                if header == 'row' and row_num == 0:
+                if header == "row" and row_num == 0:
                     tab_row.add(Th(col))
-                elif header == 'col' and col_num == 0:
+                elif header == "col" and col_num == 0:
                     tab_row.add(Th(col))
-                elif header == 'both' and row_num == 0 and col_num == 0:
+                elif header == "both" and row_num == 0 and col_num == 0:
                     tab_row.add(Th(col))
                 else:
                     tab_row.add(Td(col))
-        
+
         idx = self.child_nodes.index(container)
         del self.child_nodes[idx]
         self.add(*table)
@@ -1097,7 +1140,7 @@ class Table(HtmlElement):
     def __init__(
         self,
         *attributes,
-        header: None | str | list[str|HtmlElement] = None,
+        header: None | str | list[HtmlElement | Text | str | int | float] = None,
         options: dict[TableOption, HeaderOption] = {},
         **kwargs,
     ):
