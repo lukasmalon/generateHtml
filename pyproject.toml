@@ -1,0 +1,24 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "generateHtml"
+version = "0.0.1"
+authors = [
+  { name="lukas"},
+]
+description = "Python library for creating HTML pages."
+readme = "README.md"
+requires-python = ">=3.10"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Operating System :: OS Independent",
+]
+
+[project.urls]
+Homepage = "https://github.com/lukasmalon/generateHtml"
+Issues = "https://github.com/lukasmalon/generateHtml/issues"
+
+[tool.ruff.lint]
+ignore = ["F403", "F405"]
