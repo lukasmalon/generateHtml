@@ -25,7 +25,7 @@ class HtmlElement(ContextElement):
     def __init__(
         self,
         *inner_content: HtmlElement | HtmlAttribute | Text | str | int | float,
-        **attributes: HtmlAttribute | str,
+        **attributes: HtmlAttribute | str | int | float,
     ):
         super().__init__()
         self._child_nodes: list[HtmlElement | Text] = []
@@ -36,7 +36,7 @@ class HtmlElement(ContextElement):
 
         self._validate_attributes()
 
-    def _parse_attributes(self, attributes: dict[str, HtmlAttribute | str]) -> None:
+    def _parse_attributes(self, attributes: dict[str, HtmlAttribute | str | int | float]) -> None:
         for key, val in attributes.items():
             # Convert kwargs attribute name into dict value (as original HTML)
             attribute_key: str = key.lower().strip("_").replace("_", "-")
@@ -170,8 +170,8 @@ class HtmlElement(ContextElement):
         Args:
             pretty (bool, optional): If set to True, it will display the entire element including attributes and children with indentation.
                                      If set to False, entire element will be displayed on one line with minimum whitespaces. Defaults to True.
-            new_line (str, optional): Optional to change used newline character. Defaults to '\n'.
-            indent (str, optional): Optional to change indentation character. Defaults to '  '.
+            new_line (str, optional): Optional to change used newline character. Defaults to `\n`.
+            indent (str, optional): Optional to change indentation character. Defaults to `  `.
 
         Returns:
             str: String representation of the element structure.
@@ -205,9 +205,9 @@ class HtmlElement(ContextElement):
         else:
             raise KeyError(f"Invalid key type: {key}")
 
-    def __setitem__(self, key: str | int | slice, value):
+    def __setitem__(self, key: str | int | slice, value: HtmlElement | Text | str | int | float | HtmlAttribute):
         if isinstance(key, str):
-            if isinstance(value, (str, float, int)):
+            if isinstance(value, (str, float, int, HtmlAttribute)):
                 self._parse_attributes({key: value})
                 self._validate_attributes()
             else:
@@ -422,6 +422,8 @@ class HtmlElement(ContextElement):
 
 
 class SelfClosingElement(HtmlElement):
+    """Subclass of `HtmlElement` used for every HTML self closing tag element.
+    """
     def __init__(self, *attributes, **kwgs_attributes):
         super().__init__(*attributes, **kwgs_attributes)
 
@@ -432,6 +434,8 @@ class SelfClosingElement(HtmlElement):
 
 
 class Text(ContextElement):
+    """Class representing text nodes inside HTML structure.
+    """
     def __init__(self, text: Text | int | str | float | None):
         super().__init__()
         if isinstance(text, Text):
@@ -444,8 +448,19 @@ class Text(ContextElement):
             raise TypeError(f"Unsupported type for Text node value: {type(text)}")
         self.value: str = escape_html(text)
 
-    def add(self, *new_child: Text | int | str | float):
-        """Method for appending text in text node"""
+    def add(self, *new_child: Text | int | str | float) -> Text:
+        """Method for appending text in text node
+
+        Returns
+        -------
+        Text
+            returns Text node (self) with appended content
+
+        Raises
+        ------
+        TypeError
+            When adding disallowed Type. Only Text, str, int or float are allowed.
+        """
         for child in new_child:
             if not isinstance(child, (Text | int | str | float)):
                 raise TypeError(
@@ -458,12 +473,26 @@ class Text(ContextElement):
         return self
 
     def __len__(self) -> int:
+        """Returns length of Text string value.
+
+        Returns
+        -------
+        int
+            Text value property length
+        """
         return self.value.__len__()
 
     def __iter__(self) -> Iterator[str]:
         return self.value.__iter__()
 
     def __str__(self) -> str:
+        """Returns Text value property string
+
+        Returns
+        -------
+        str
+            Text value property
+        """
         return self.value
 
     def __repr__(self) -> str:
@@ -600,10 +629,9 @@ class Document(Container):
 
 
 class Doctype(SelfClosingElement):
-    """Defines the document type."""
+    """Defines the document type.
 
-    display_name: str = "!DOCTYPE html"
-
+    """
     def __init__(
         self,
         *attributes,

@@ -197,11 +197,12 @@ You can initialize HTML table through `Table` tag class in multiple ways:
   <table><tr><td>Col 1</td><td>Col 2</td><td>Col 3</td></tr><tr><td>1</td><td>2</td><td>3</td></tr><tr><td>4</td><td>5</td><td>6</td></tr></table>
 
 You can pass header argument:
-```python
-  print(Table(
-    [[1, 2, 3], [4, 5, 6]], header=['Col 1', 'Col 2', 'Col 3']
-  ))
+  ```python
+    print(Table(
+      [[1, 2, 3], [4, 5, 6]], header=['Col 1', 'Col 2', 'Col 3']
+    ))
   ```
+
 Or explicitly set first row/col or both as header:
 ```python
   print(Table(
@@ -402,9 +403,6 @@ div.find(Div()) # Finds all divs in div (including self)
 
 div.find(Div(Id("inner_div"))) # Finds all divs with id="inner_div"
 # return 1 div: [<:: Div element: no childs, 1 attributes ::>]
-
-div.find(Li(1)) # Finds all li with text "1"
-# return 1 li: [<:: Li element: 1 child nodes ::>]
 
 div.find(Li(1)) # Finds all li with text "1"
 # return 1 li: [<:: Li element: 1 child nodes ::>]
