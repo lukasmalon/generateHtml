@@ -639,7 +639,33 @@ class Doctype(SelfClosingElement):
         **kwgs_attributes,
     ):
         super().__init__(*attributes, **kwgs_attributes)
-        self.__class__.display_name = declaration.value
+        self._declaration: str = declaration.value
+
+    @property
+    def declaration(self) -> str:
+        return self._declaration
+
+    @declaration.setter
+    def declaration(self, value: DoctypeDeclaration) -> None:
+        self._declaration = value.value
+
+    def _display_prepare(
+        self,
+        pretty: bool = False,
+        new_line: str = "\n",
+        indent: str = "  ",
+        depth_level: int = 0,
+    ) -> str:
+        class_name = getattr(
+            self.__class__, "display_name", self.declaration
+        )
+        new_line = new_line if pretty else ""
+        indent = indent if pretty else ""
+
+        return (
+            f"{''.join([new_line if depth_level else '', depth_level*indent])}"
+            f"<{class_name}>"
+        )
 
 
 class Html(HtmlElement):
