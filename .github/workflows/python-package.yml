@@ -29,6 +29,9 @@ jobs:
         python -m pip install --upgrade pip
         python -m pip install pytest
         if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+    - name: Check typing with mypy
+      run: |
+        mypy -p generateHtml
     - name: Test with pytest
       run: |
-        python -m pytest tests/*
+        pytest tests/*

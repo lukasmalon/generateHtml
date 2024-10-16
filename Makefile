@@ -7,4 +7,5 @@ test:
 	make clean
 
 clean:
-	find . -type d \( -name "dist" -o -name "__pycache__" -o -name ".ruff_cache" -o -name ".pytest_cache" \) -exec rm -r {} +
+	find . -type d \( -name "site" -o -name "dist" -o -name ".mypy_cache" -o -name "__pycache__" -o -name ".ruff_cache" -o -name ".pytest_cache" \) -exec rm -r {} +
+	find . -type f \( -name ".coverage" \) -exec rm {} +

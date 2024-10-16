@@ -148,6 +148,7 @@ class BooleanHtmlAttribute(HtmlAttribute):
             try:
                 true_value = BooleanTrueDisplayOption[true_value.upper()]
             except KeyError:
+                # Can be passed as custom value
                 pass
         if true_value == BooleanTrueDisplayOption.SHORT:
             return f"{class_name}"
