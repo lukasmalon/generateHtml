@@ -1,16 +1,6 @@
 import re
 import importlib
-from collections import Counter
 from typing import Type, Any
-
-
-def check_max_occurences(
-    item_list: list, max_occurences: int = 1
-) -> tuple[object, int] | None:
-    count = Counter(type(item) for item in item_list)
-    max_occured_list = count.most_common(1)
-    max_occured = max_occured_list[0] if max_occured_list else None
-    return max_occured if max_occured and max_occured[1] > max_occurences else None
 
 
 def prepend_dash_before_uppercase(input_str: str) -> str:
